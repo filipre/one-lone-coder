@@ -6,39 +6,47 @@
             "type": "shell",
             "command": "clang++",
             "args": [
-                "-arch", "x86_64",
+                "-g",
+                "-arch",
+                "x86_64",
                 "-std=c++17",
                 "-Wall",
-                "-framework", "Cocoa",
-                "-framework", "Quartz",
-                "-framework", "OpenGL",
+                "-framework",
+                "Cocoa",
+                "-framework",
+                "Quartz",
+                "-framework",
+                "OpenGL",
                 "-lcocoawindowing_s",
                 "-lpng",
-                "-L", "olcPixelGameEngine/bin",
-                "-I", "olcPixelGameEngine/include",
+                "-L",
+                "olcPixelGameEngine/bin",
+                "-I",
+                "olcPixelGameEngine/include",
                 "${file}",
-                "-o", "${relativeFileDirname}/${fileBasenameNoExtension}"
+                "-o",
+                "${relativeFileDirname}/${fileBasenameNoExtension}"
+            ],
+            "problemMatcher": [
+                "$gcc"
             ]
         },
         {
-            "label": "run",
-            "dependsOn": ["build"],
+            "label": "► run",
+            "dependsOn": [
+                "build"
+            ],
             "type": "process",
-            "command": "./${relativeFileDirname}/${fileBasenameNoExtension}"
+            "command": "./${relativeFileDirname}/${fileBasenameNoExtension}",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
             "label": "clean",
             "type": "shell",
             "command": "rm ${relativeFileDirname}/${fileBasenameNoExtension}"
-        },
-        {
-            "label": "default",
-            "dependsOrder": "sequence",
-            "dependsOn": ["run", "clean"],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
         }
     ]
 }
