@@ -11,6 +11,7 @@ int main()
 {
     vector<string> msg {"Hello", "C++", "World", "from", "VS Code", "and the C++ extension!"};
     int a = 3;
+    msg.push_back("test");
     for (const string& word : msg)
     {
         cout << word << " ";
