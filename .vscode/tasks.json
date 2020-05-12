@@ -12,20 +12,13 @@
                 "-std=c++17",
                 "-Wall",
                 "-framework",
-                "Cocoa",
-                "-framework",
-                "Quartz",
-                "-framework",
                 "OpenGL",
-                "-lcocoawindowing_s",
+                "-framework",
+                "GLUT",
                 "-lpng",
-                "-L",
-                "olcPixelGameEngine/bin",
-                "-I",
-                "olcPixelGameEngine/include",
                 "${file}",
                 "-o",
-                "${relativeFileDirname}/${fileBasenameNoExtension}"
+                "./${relativeFileDirname}/${fileBasenameNoExtension}"           
             ],
             "problemMatcher": [
                 "$gcc"
