@@ -10,24 +10,25 @@ public:
     }
 
     struct Renderable
-    {
-        olc::Sprite* sprite = nullptr;
-        olc::Decal* decal = nullptr;
+	{
+		Renderable() {}
 
-        Renderable() { }
+		void Load(const std::string& sFile)
+		{
+			sprite = new olc::Sprite(sFile);
+			decal = new olc::Decal(sprite);
+		}
 
-        void Load(const std::string& sFile)
-        {
-            sprite = new olc::Sprite(sFile);
-            decal = new olc::Decal(sprite);
-        }
+		~Renderable()
+		{
+			delete decal;
+			delete sprite;
+		}
 
-        ~Renderable()
-        {
-            delete decal;
-            delete sprite;
-        }
-    };
+		olc::Sprite* sprite = nullptr;
+		olc::Decal* decal = nullptr;
+	};
+
 
     struct vec3d
     {
@@ -37,7 +38,7 @@ public:
     struct sQuad
     {
         vec3d points[4];
-        olc::vf2d tile;
+        olc::vf2d tile; // TODO: check if vi2d also works, might be even more fitting
     };
 
     struct sCell
@@ -81,6 +82,8 @@ public:
     float fCameraPitch = 5.5f;
     float fCameraZoom = 16.0f;
 
+    olc::vi2d vCursor = { 0, 0 };
+	olc::vi2d vTileCursor = { 0,0 };
     olc::vi2d vTileSize = { 16, 16 };
 
     enum Face
@@ -96,9 +99,9 @@ public:
 public:
     bool OnUserCreate() override
     {
-        rendAllWalls.Load("minecraft_sprites.png");
+        rendAllWalls.Load("./DungeonWarping/minecraft_sprites.png");
 
-        world.Create(64, 64);
+        world.Create(20, 20);
 
         for (int y=0; y<world.size.y; y++)
             for (int x=0; x<world.size.x; x++)
@@ -177,9 +180,9 @@ public:
         auto& cell = world.GetCell(vCell);
 
         auto MakeFace = [&](int v1, int v2, int v3, int v4, Face f)
-        {
-            render.push_back({ projCube[v1], projCube[v2], projCube[v3], projCube[v4], cell.id[f] });
-        };
+		{
+			render.push_back({ projCube[v1], projCube[v2], projCube[v3], projCube[v4], cell.id[f] });
+		};
 
         if (!cell.wall)
         {
@@ -197,18 +200,38 @@ public:
 
     bool OnUserUpdate(float fElapsedTime) override
     {
+        // Grab mouse for convenience
+		olc::vi2d vMouse = { GetMouseX(), GetMouseY() };
+
+		// Edit mode - Selection from tile sprite sheet
+		if (GetKey(olc::Key::TAB).bHeld)
+		{
+            Clear(olc::BLACK);
+            // 
+			DrawSprite({ 0, 0 }, rendAllWalls.sprite);
+			DrawRect(vTileCursor * vTileSize, vTileSize);
+			if (GetMouse(0).bPressed) vTileCursor = vMouse / vTileSize;
+			return true;
+		}
+
+
         std::vector<sQuad> vQuads;
         for (int y=0; y<world.size.y; y++)
             for (int x=0; x<world.size.x; x++)
                 GetFaceQuads({ x, y }, fCameraAngle, fCameraPitch, fCameraZoom, { vCameraPos.x, 0.0f, vCameraPos.y }, vQuads);
 
         Clear(olc::WHITE);
-        // for (auto& q : vQuads)
-            // TODO
-            // rendAllWalls.decal
-            // {q.points[0].x, q.points[0].y}, {q.points[1].x, q.points[1].y}, {q.points[2].x, q.points[2].y}, {q.points[3].x, q.points[3].y}
-            // q.tile
-            // vTileSize
+        for (auto& q : vQuads)
+        {
+            // std::cout << "(" << q.points[0].x << ", " << q.points[0].y << ")" << std::endl;
+            DrawPartialWarpedDecal
+            (
+                rendAllWalls.decal,
+                { {q.points[0].x, q.points[0].y}, {q.points[1].x, q.points[1].y}, {q.points[2].x, q.points[2].y}, {q.points[3].x, q.points[3].y} },
+                q.tile,
+                vTileSize
+            );
+        }
 
         return true;
     }
@@ -217,7 +240,7 @@ public:
 int main()
 {
     olcDungeon demo;
-    if (demo.Construct(640, 480, 1, 1, false))
+    if (demo.Construct(257, 257, 2, 2, false))
         demo.Start();
     return 0;
 }
