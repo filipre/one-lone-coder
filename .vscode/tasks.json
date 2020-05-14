@@ -22,7 +22,11 @@
             ],
             "problemMatcher": [
                 "$gcc"
-            ]
+            ],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
         },
         {
             "label": "► run",
@@ -34,12 +38,20 @@
             "group": {
                 "kind": "build",
                 "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
             }
         },
         {
             "label": "clean",
             "type": "shell",
-            "command": "rm ${relativeFileDirname}/${fileBasenameNoExtension}"
+            "command": "rm ${relativeFileDirname}/${fileBasenameNoExtension}",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
         }
     ]
 }
