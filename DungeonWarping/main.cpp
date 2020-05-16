@@ -1,6 +1,8 @@
 #define OLC_PGE_APPLICATION
 #include "../olcPixelGameEngine.h"
 
+// see https://github.com/OneLoneCoder/olcPixelGameEngine/blob/master/Videos/OneLoneCoder_PGE_DungeonWarping.cpp
+
 class olcDungeon : public olc::PixelGameEngine
 {
 public:
@@ -75,12 +77,15 @@ public:
     };
 
     World world;
+    Renderable rendSelect;
     Renderable rendAllWalls;
 
     olc::vf2d vCameraPos = { 0.0f, 0.0f };
     float fCameraAngle = 0.0f;
     float fCameraPitch = 5.5f;
     float fCameraZoom = 16.0f;
+
+    bool bVisible[6];
 
     olc::vi2d vCursor = { 0, 0 };
 	olc::vi2d vTileCursor = { 0,0 };
@@ -99,6 +104,7 @@ public:
 public:
     bool OnUserCreate() override
     {
+        rendSelect.Load("./DungeonWarping/highlight.png");
         rendAllWalls.Load("./DungeonWarping/minecraft_sprites.png");
 
         world.Create(20, 20);
@@ -173,6 +179,24 @@ public:
         return projCube;
     }
 
+    void CalculateVisibleFaces(std::array<vec3d, 8>& cube)
+    {
+        auto CheckNormal = [&](int v1, int v2, int v3)
+        {
+            olc::vf2d a = { cube[v1].x, cube[v1].y };
+            olc::vf2d b = { cube[v2].x, cube[v2].y };
+            olc::vf2d c = { cube[v3].x, cube[v3].y };
+            return (b-a).cross(c-a) > 0;
+        };
+
+        bVisible[Face::Floor] = CheckNormal(4, 0, 1);
+        bVisible[Face::South] = CheckNormal(3, 0, 1);
+        bVisible[Face::North] = CheckNormal(6, 5, 4);
+        bVisible[Face::East] = CheckNormal(7, 4, 0);
+        bVisible[Face::West] = CheckNormal(2, 1, 5);
+        bVisible[Face::Top] = CheckNormal(7, 3, 2);
+    }
+
     void GetFaceQuads(const olc::vi2d& vCell, const float fAngle, const float fPitch, const float fScale, const vec3d& vCamera, std::vector<sQuad> &render)
     {
         std::array<vec3d, 8> projCube = CreateCube(vCell, fAngle, fPitch, fScale, vCamera);
@@ -186,39 +210,84 @@ public:
 
         if (!cell.wall)
         {
-            MakeFace(4, 0, 1, 5, Face::Floor);
+            if (bVisible[Face::Floor]) MakeFace(4, 0, 1, 5, Face::Floor);
         }
         else
         {
-            MakeFace(3, 0, 1, 2, Face::South);
-            MakeFace(6, 5, 4, 7, Face::North);
-            MakeFace(7, 4, 0, 3, Face::East);
-            MakeFace(2, 1, 5, 6, Face::West);
-            MakeFace(7, 3, 2, 6, Face::Top);
+            if (bVisible[Face::South]) MakeFace(3, 0, 1, 2, Face::South);
+            if (bVisible[Face::North]) MakeFace(6, 5, 4, 7, Face::North);
+            if (bVisible[Face::East]) MakeFace(7, 4, 0, 3, Face::East);
+            if (bVisible[Face::West]) MakeFace(2, 1, 5, 6, Face::West);
+            if (bVisible[Face::Top]) MakeFace(7, 3, 2, 6, Face::Top);
         }
     }
 
     bool OnUserUpdate(float fElapsedTime) override
     {
-        // Grab mouse for convenience
+        // Input
 		olc::vi2d vMouse = { GetMouseX(), GetMouseY() };
 
-		// Edit mode - Selection from tile sprite sheet
+        // Tile selection
 		if (GetKey(olc::Key::TAB).bHeld)
 		{
             Clear(olc::BLACK);
-            // 
 			DrawSprite({ 0, 0 }, rendAllWalls.sprite);
 			DrawRect(vTileCursor * vTileSize, vTileSize);
 			if (GetMouse(0).bPressed) vTileCursor = vMouse / vTileSize;
 			return true;
 		}
 
+        // Camera
+        if (GetKey(olc::Key::W).bHeld) fCameraPitch += 1.0f * fElapsedTime;
+        if (GetKey(olc::Key::S).bHeld) fCameraPitch -= 1.0f * fElapsedTime;
+        if (GetKey(olc::Key::D).bHeld) fCameraAngle += 1.0f * fElapsedTime;
+        if (GetKey(olc::Key::A).bHeld) fCameraAngle -= 1.0f * fElapsedTime;
+        if (GetKey(olc::Key::Q).bHeld) fCameraZoom += 5.0f * fElapsedTime;
+        if (GetKey(olc::Key::E).bHeld) fCameraZoom -= 5.0f * fElapsedTime;
 
+        // Apply textures
+        if (GetKey(olc::Key::K1).bPressed) world.GetCell(vCursor).id[Face::North] = vTileCursor * vTileSize;
+        if (GetKey(olc::Key::K2).bPressed) world.GetCell(vCursor).id[Face::East] = vTileCursor * vTileSize;
+        if (GetKey(olc::Key::K3).bPressed) world.GetCell(vCursor).id[Face::South] = vTileCursor * vTileSize;
+        if (GetKey(olc::Key::K4).bPressed) world.GetCell(vCursor).id[Face::West] = vTileCursor * vTileSize;
+        if (GetKey(olc::Key::K5).bPressed) world.GetCell(vCursor).id[Face::Floor] = vTileCursor * vTileSize;
+        if (GetKey(olc::Key::K6).bPressed) world.GetCell(vCursor).id[Face::Top] = vTileCursor * vTileSize;
+
+        // Cursor
+        if (GetKey(olc::Key::LEFT).bPressed) vCursor.x--;
+        if (GetKey(olc::Key::RIGHT).bPressed) vCursor.x++;
+        if (GetKey(olc::Key::UP).bPressed) vCursor.y--;
+        if (GetKey(olc::Key::DOWN).bPressed) vCursor.y++;
+        if (vCursor.x < 0) vCursor.x = 0;
+        if (vCursor.y < 0) vCursor.y = 0;
+        if (vCursor.x >= world.size.x) vCursor.x = world.size.x - 1;
+        if (vCursor.y >= world.size.y) vCursor.y = world.size.y - 1;
+
+        // Place blocks
+        if (GetKey(olc::Key::SPACE).bPressed)
+        {
+            world.GetCell(vCursor).wall = !world.GetCell(vCursor).wall;
+        }
+
+        vCameraPos = { vCursor.x + 0.5f, vCursor.y + 0.5f };
+        vCameraPos *= fCameraZoom;
+
+        // Rendering
+
+        std::array<vec3d, 8> cullCube = CreateCube({ 0, 0}, fCameraAngle, fCameraPitch, fCameraZoom, { vCameraPos.x, 0.0f, vCameraPos.y });
+        CalculateVisibleFaces(cullCube);
+        
         std::vector<sQuad> vQuads;
         for (int y=0; y<world.size.y; y++)
             for (int x=0; x<world.size.x; x++)
                 GetFaceQuads({ x, y }, fCameraAngle, fCameraPitch, fCameraZoom, { vCameraPos.x, 0.0f, vCameraPos.y }, vQuads);
+
+        std::sort(vQuads.begin(), vQuads.end(), [](const sQuad& q1, const sQuad& q2)
+        {
+            float z1 = (q1.points[0].z + q1.points[1].z + q1.points[2].z + q1.points[3].z) * 0.25f;
+            float z2 = (q2.points[0].z + q2.points[1].z + q2.points[2].z + q2.points[3].z) * 0.25f;
+            return z1 < z2;
+        });
 
         Clear(olc::WHITE);
         for (auto& q : vQuads)
@@ -233,14 +302,19 @@ public:
             );
         }
 
-        return true;
+        vQuads.clear();
+        GetFaceQuads(vCursor, fCameraAngle, fCameraPitch, fCameraZoom, { vCameraPos.x, 0.0f, vCameraPos.y }, vQuads);
+        for (auto& q : vQuads)
+            DrawWarpedDecal(rendSelect.decal, { {q.points[0].x, q.points[0].y}, {q.points[1].x, q.points[1].y}, {q.points[2].x, q.points[2].y}, {q.points[3].x, q.points[3].y} });
+
+        return !GetKey(olc::Key::ESCAPE).bPressed;
     }
 };
 
 int main()
 {
     olcDungeon demo;
-    if (demo.Construct(257, 257, 2, 2, false))
+    if (demo.Construct(257, 257, 3, 3, false))
         demo.Start();
     return 0;
 }
