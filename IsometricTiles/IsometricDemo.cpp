@@ -1,5 +1,5 @@
 #define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
+#include "../olcPixelGameEngine.h"
 
 class IsometricDemo : public olc::PixelGameEngine
 {
@@ -19,7 +19,7 @@ private:
 public:
     bool OnUserCreate() override
     {
-        sprIsom = new olc::Sprite("isometric_demo.png");
+        sprIsom = new olc::Sprite("IsometricTiles/isometric_demo.png");
         pWorld = new int[vWorldSize.x * vWorldSize.y]{ 0 };
         return true;
     }
@@ -120,7 +120,7 @@ public:
 int main()
 {
     IsometricDemo demo;
-    if (demo.Construct(512, 480, 1, 1))
+    if (demo.Construct(512, 300, 2, 2))
         demo.Start();
     return 0;
 }

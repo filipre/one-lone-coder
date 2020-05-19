@@ -1,7 +1,8 @@
 #define OLC_PGE_APPLICATION
+#include "../olcPixelGameEngine.h"
 
 #include <iostream>
-#include "olcPixelGameEngine.h"
+
 
 class Tetris : public olc::PixelGameEngine {
     private:
